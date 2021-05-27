@@ -1,0 +1,29 @@
+
+
+service: test
+
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: python3.8
+  lambdaHashingVersion: 20201221
+
+
+
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - httpApi:
+          path: /test
+          method: post
+  
+  
+
+
+
+plugins:
+  - serverless-offline
+  - serverless-python-requirements
