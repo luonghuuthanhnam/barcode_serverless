@@ -24,20 +24,20 @@ import time
 # args = parser.parse_args()
 
 
-class BarcodeReader():
+class BarcodeReader:
     # def __init__(self) -> None:
     #     pass
-    def get_image_in_pdf(self, pdf_data)->Image:
+    def get_image_in_pdf(self, pdf_data):
         doc = fitz.open(stream=pdf_data, filetype="pdf")
         pix_list = []
         for i in range(len(doc)):
             for img in doc.getPageImageList(i):
                 xref = img[0]
                 pix = fitz.Pixmap(doc, xref)
-                if pix.n < 5:       # this is GRAY or RGB
+                if pix.n < 5:  # this is GRAY or RGB
                     # pix.writePNG("p%s-%s.png" % (i, xref))
                     pix_list.append(pix)
-                else:               # CMYK: convert to RGB first
+                else:  # CMYK: convert to RGB first
                     pix1 = fitz.Pixmap(fitz.csRGB, pix)
                     # pix1.writePNG("p%s-%s.png" % (i, xref))
                     pix_list.append(pix1)
@@ -49,28 +49,35 @@ class BarcodeReader():
             stream = io.BytesIO(arr)
             img_list.append(Image.open(stream))
         return img_list
-    
-    def padding_image(self, image)-> np.array:
-        ht, wd, cc= image.shape
-        ww = wd+10
-        hh = ht+10
-        color = (255,255,255)
-        result = np.full((hh,ww,cc), color, dtype=np.uint8)
+
+    def padding_image(self, image):
+        ht, wd, cc = image.shape
+        ww = wd + 10
+        hh = ht + 10
+        color = (255, 255, 255)
+        result = np.full((hh, ww, cc), color, dtype=np.uint8)
 
         # compute center offset
         xx = (ww - wd) // 2
         yy = (hh - ht) // 2
 
         # copy img image into center of result image
-        result[yy:yy+ht, xx:xx+wd] = image
+        result[yy : yy + ht, xx : xx + wd] = image
         return result
 
-    def __call__(self, pdf_path) -> None:
+    def __call__(self, pdf_path):
+        barcode_list = []
         img_list = self.get_image_in_pdf(pdf_path)
-        padded_image = self.padding_image(np.array(img_list[0]))
-        result = pyzbar.decode(padded_image)
-        barcode =  result[0].data.decode("utf-8")
-        return barcode
+        for img in img_list:
+            padded_image = self.padding_image(np.array(img))
+            try:
+                result = pyzbar.decode(padded_image)
+                barcode = result[0].data.decode("utf-8")
+                barcode_list.append(barcode)
+            except:
+                pass
+        return barcode_list
+
 
 async def read_barcode(body, reader):
     start_time = time.time()
@@ -91,6 +98,7 @@ async def read_barcode(body, reader):
     # await asyncio.sleep(0)
     return out
 
+
 # if __name__ == "__main__":
 #     pdf_path = str(args.pdf_path)
 #     save_txt_path = str(args.save_txt_path)
@@ -99,8 +107,3 @@ async def read_barcode(body, reader):
 #     file1 = open(save_txt_path,"w")
 #     file1.writelines(barcode)
 #     file1.close()
-    
-        
-
-
-        
