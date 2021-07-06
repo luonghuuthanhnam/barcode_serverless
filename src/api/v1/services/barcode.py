@@ -75,7 +75,7 @@ class BarcodeReader:
                 barcode = result[0].data.decode("utf-8")
                 barcode_list.append(barcode)
             except:
-                pass
+                continue
         return barcode_list
 
 
